@@ -2,7 +2,7 @@
  * Vector similarity utilities for semantic matching
  */
 
-import type { CacheEntry, SimilarityResult } from './types.js';
+import type { CacheEntry, SimilarityResult } from './types.ts';
 
 /**
  * Calculate cosine similarity between two vectors
@@ -95,7 +95,7 @@ export function normalize(vector: number[]): number[] {
  * @param dimension Target embedding dimension
  * @returns Simple embedding vector
  */
-export function defaultEmbedding(text: string, dimension: number = 384): number[] {
+export function generateEmbedding(text: string, dimension: number = 384): number[] {
   const embedding = new Array(dimension).fill(0);
   const normalized = text.toLowerCase();
 

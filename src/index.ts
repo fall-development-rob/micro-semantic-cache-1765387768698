@@ -3,9 +3,9 @@
  * @module micro-semantic-cache
  */
 
-export * from './types.js';
-export * from './vector.js';
-export * from './cache.js';
+export * from './types.ts';
+export * from './vector.ts';
+export * from './cache.ts';
 
 // Re-export main factory as default
-export { createSemanticCache as default } from './cache.js';
+export { createSemanticCache as default } from './cache.ts';

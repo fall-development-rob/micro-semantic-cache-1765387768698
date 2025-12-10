@@ -8,8 +8,8 @@ import type {
   CacheStats,
   ISemanticCache,
   SimilarityResult,
-} from './types.js';
-import { findKNearest, defaultEmbedding } from './vector.js';
+} from './types.ts';
+import { findKNearest, generateEmbedding } from './vector.ts';
 
 /**
  * Semantic cache implementation using vector similarity for intelligent caching
@@ -17,11 +17,11 @@ import { findKNearest, defaultEmbedding } from './vector.js';
 export class SemanticCache<T = unknown> implements ISemanticCache<T> {
   private entries: Map<string, CacheEntry<T>>;
   private config: Required<CacheConfig>;
-  private stats: { hits: number; misses: number; similarHits: number };
+  private _stats: { hits: number; misses: number; similarHits: number };
 
   constructor(config?: CacheConfig) {
     this.entries = new Map();
-    this.stats = { hits: 0, misses: 0, similarHits: 0 };
+    this._stats = { hits: 0, misses: 0, similarHits: 0 };
 
     // Set defaults
     this.config = {
@@ -29,7 +29,7 @@ export class SemanticCache<T = unknown> implements ISemanticCache<T> {
       ttl: config?.ttl ?? 3600000, // 1 hour
       similarityThreshold: config?.similarityThreshold ?? 0.85,
       embeddingDimension: config?.embeddingDimension ?? 384,
-      embedFn: config?.embedFn ?? ((text: string) => defaultEmbedding(text, config?.embeddingDimension ?? 384)),
+      embedFn: config?.embedFn ?? ((text: string) => generateEmbedding(text, config?.embeddingDimension ?? 384)),
     };
   }
 
@@ -43,19 +43,19 @@ export class SemanticCache<T = unknown> implements ISemanticCache<T> {
 
     // Check if entry exists
     if (!entry) {
-      this.stats.misses++;
+      this._stats.misses++;
       return null;
     }
 
     // Check if expired
     if (entry.expiresAt < Date.now()) {
       this.entries.delete(key);
-      this.stats.misses++;
+      this._stats.misses++;
       return null;
     }
 
     // Hit!
-    this.stats.hits++;
+    this._stats.hits++;
     return entry.value;
   }
 
@@ -133,7 +133,7 @@ export class SemanticCache<T = unknown> implements ISemanticCache<T> {
 
     // Track similar hits
     if (results.length > 0) {
-      this.stats.similarHits += results.length;
+      this._stats.similarHits += results.length;
     }
 
     return results;
@@ -173,7 +173,15 @@ export class SemanticCache<T = unknown> implements ISemanticCache<T> {
    */
   clear(): void {
     this.entries.clear();
-    this.stats = { hits: 0, misses: 0, similarHits: 0 };
+    this._stats = { hits: 0, misses: 0, similarHits: 0 };
+  }
+
+  /**
+   * Get the current cache size
+   * @returns Number of entries in cache
+   */
+  size(): number {
+    return this.entries.size;
   }
 
   /**
@@ -181,13 +189,13 @@ export class SemanticCache<T = unknown> implements ISemanticCache<T> {
    * @returns Cache statistics including hit rate
    */
   stats(): CacheStats {
-    const totalRequests = this.stats.hits + this.stats.misses;
-    const hitRate = totalRequests > 0 ? this.stats.hits / totalRequests : 0;
+    const totalRequests = this._stats.hits + this._stats.misses;
+    const hitRate = totalRequests > 0 ? this._stats.hits / totalRequests : 0;
 
     return {
-      hits: this.stats.hits,
-      misses: this.stats.misses,
-      similarHits: this.stats.similarHits,
+      hits: this._stats.hits,
+      misses: this._stats.misses,
+      similarHits: this._stats.similarHits,
       size: this.entries.size,
       hitRate,
     };
